@@ -80,6 +80,18 @@ class Yarn:
 
         return self.exit_time - self.enter_time
 
+    @property
+    def symbol(self) -> str:
+        """Identifier symbol."""
+
+        return self.identifier.symbol
+
+    @property
+    def key(self) -> str:
+        """Identifier key."""
+
+        return self.identifier.key
+
     # IO
 
     @classmethod

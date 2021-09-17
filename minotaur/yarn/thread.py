@@ -10,6 +10,7 @@ from .yarn import Value, Identifier, Yarn
 @dataclass
 class Message(ABC):
     timestamp : int
+    context : Identifier
 
     # IO
 
@@ -25,11 +26,6 @@ class Message(ABC):
 
         raise NotImplementedError(f"Class {cls} has no `load` method.")
 
-    def dumps(self) -> str:
-        """Convert a message to a string."""
-        
-        return dumps(self.dump())
-
 @dataclass
 class Enter(Message):
     identifier : Identifier
@@ -40,6 +36,7 @@ class Enter(Message):
         return {
             "type" : "enter",
             "identifier" : self.identifier.dump(),
+            "context" : self.context.dump(),
             "timestamp" : self.timestamp
         }
 
@@ -49,9 +46,10 @@ class Enter(Message):
 
         assert json["type"] == "enter"
         identifier = Identifier.load(json["identifier"])
+        context = Identifier.load(json["context"])
         timestamp = json["timestamp"]
 
-        return cls(identifier=identifier, timestamp=timestamp)
+        return cls(identifier=identifier, context=context, timestamp=timestamp)
 
 @dataclass
 class Exit(Message):
@@ -63,6 +61,7 @@ class Exit(Message):
         return {
             "type" : "exit",
             "identifier" : self.identifier.dump(),
+            "context" : self.identifier.dump(),
             "timestamp" : self.timestamp
         }
 
@@ -72,9 +71,10 @@ class Exit(Message):
 
         assert json["type"] == "exit"
         identifier = Identifier.load(json["identifier"])
+        context = Identifier.load(json["context"])
         timestamp = json["timestamp"]
 
-        return cls(identifier=identifier, timestamp=timestamp)
+        return cls(identifier=identifier, context=context, timestamp=timestamp)
 
 @dataclass
 class Emit(Message):
@@ -89,6 +89,7 @@ class Emit(Message):
             "type" : "emit",
             "name" : self.name,
             "value" : self.value,
+            "context" : self.context.dump(),
             "timestamp" : self.timestamp
         }
 
@@ -96,11 +97,11 @@ class Emit(Message):
     def load(cls, json) -> "Emit":
         """Load an Emit message from a JSON encoding."""
 
-        identifier = Identifier.load(json["identifier"])
+        context = Identifier.load(json["context"])
         name, value = json["name"], json["value"]
         timestamp = json["timestamp"]
 
-        return cls(name=name, value=value, context=identifier, timestamp=timestamp)
+        return cls(name=name, value=value, context=context, timestamp=timestamp)
 
 # monkey patch .load static method for Message
 
