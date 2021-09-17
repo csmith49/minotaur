@@ -49,3 +49,13 @@ class Identifier:
             "symbol" : self.symbol,
             "key" : self.key
         }
+
+# Yarn
+
+@dataclass
+class Yarn:
+    identifier : Identifier
+    values : Mapping[str, Any]
+    contexts : List["Yarn"]
+    enter_time : int
+    exit_time : int
