@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Any, Dict
 
-from ..utility.timer import current_time
+from ..utility.seed import Seed
 
 @dataclass
 class Value:
@@ -33,16 +33,17 @@ class Identifier:
     key : str
 
     def __init__(self, symbol : str, key : Optional[str] = None):
-        """Construct an identifier from a symbol and an optional key.
+        """Construct an identifier from a symbol.
 
-        If no key is provided, one will be created with `hash(current_time())`.
+        Identifiers are further disambiguated with a key, constructed using `utility.Seed`.
         """
 
         self.symbol = symbol
+
         if key is not None:
             self.key = key
         else:
-            self.key = hash(current_time())
+            self.key = Seed().value
 
     # IO
 
