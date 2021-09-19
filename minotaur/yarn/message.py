@@ -9,7 +9,7 @@ from .yarn import Value, Identifier, Yarn
 
 @dataclass
 class Message(ABC):
-    timestamp : int
+    timestamp : float
     context : Identifier
 
     # IO
@@ -25,6 +25,11 @@ class Message(ABC):
         """Load a message from a JSON encoding."""
 
         raise NotImplementedError(f"Class {cls} has no `load` method.")
+
+    # magic methods
+
+    def __str__(self):
+        return dumps(self.dump())
 
 @dataclass
 class Enter(Message):
@@ -61,7 +66,7 @@ class Exit(Message):
         return {
             "type" : "exit",
             "identifier" : self.identifier.dump(),
-            "context" : self.identifier.dump(),
+            "context" : self.context.dump(),
             "timestamp" : self.timestamp
         }
 
@@ -121,91 +126,60 @@ def _load_message(json) -> Message:
 
 setattr(Message, "load", _load_message)
 
-# Threads
+# Sequences of Messages
 
-class Thread:
-    """A linearized Yarn."""
+def timestamp_order(messages : List[Message]) -> Iterable[Message]:
+    """Yield messages in increasing timestamp-order (so earlier messages are yielded first)."""
 
-    def __init__(self, messages : List[Message]):
-        """Construct a Thread from a list of messagse."""
+    yield from sorted(messages, key=lambda message: message.timestamp)
 
-        self._messages = messages
+def load(messages : List[Message]) -> Yarn:
+    """Load a Yarn object from a list of messages.
+    
+    Based on the classic Shunting-Yard algorithm. Runs in O(m) time."""
 
-    # Access
+    stack = []
 
-    @property
-    def messages(self) -> Iterable[Message]:
-        """Yield messages in timestamp-order."""
+    for message in timestamp_order(messages):
+        # case 1: emits and enters get pushed onto the stack
+        if isinstance(message, (Emit, Enter)):
+            stack.append(message)
 
-        yield from sorted(self.messages, key=lambda m: m.timestamp)
+        # case 2: exits process all values until the matching enter
+        if isinstance(message, Exit):
+            values, contexts = [], []
+            
+            # search for the matching enter
+            while stack:
+                obj = stack.pop()
 
-    # IO
+                # push the object into the right list
+                if isinstance(obj, Emit):
+                    value = Value(name=obj.name, value=obj.value)
+                    values.append(value)
 
-    def dump(self):
-        """Encode a Thread as a list of JSON objects."""
+                if isinstance(obj, Yarn):
+                    contexts.append(obj)
 
-        lines = []
-        for message in self.messages_in_order():
-            lines.append(message.dump())
+                if isinstance(obj, Enter) and obj.identifier == message.identifier:
+                    exit_time = obj.timestamp
+                    break
+            
+            # if we don't find the matching enter, contexts are unmatched
+            else:
+                raise Exception()
 
-        return lines
+            # build the new yarn object
+            yarn = Yarn(
+                identifier=message.identifier,
+                values=values,
+                contexts=contexts,
+                enter_time=message.timestamp,
+                exit_time=exit_time
+            )
 
-    @classmethod
-    def load(cls, jsonl) -> "Thread":
-        """Load a Thread from a list of JSON objects."""
+            # and add it back to the stack
+            stack.append(yarn)
 
-        messages = [Message.load(json) for json in jsonl]
-        return cls(messages=messages)
-
-    # Conversion
-
-    def yarn(self) -> Yarn:
-        """Convert a Thread object to a Yarn object.
-        
-        Based on the classic Shunting-Yard algorithim. Runs in O(m) time."""
-
-        stack = []
-
-        for message in self.messages:
-            # case 1: emits and enters get pushed onto the stack
-            if isinstance(message, (Emit, Enter)):
-                stack.append(message)
-
-            # case 2: exits process all values until the matching enter
-            if isinstance(message, Exit):
-                values, contexts = [], []
-                
-                # search for the matching enter
-                while stack:
-                    obj = stack.pop()
-
-                    # push the object into the right list
-                    if isinstance(obj, Emit):
-                        value = Value(name=obj.name, value=obj.value)
-                        values.append(value)
-
-                    if isinstance(obj, Yarn):
-                        contexts.append(obj)
-
-                    if isinstance(obj, Enter) and obj.identifier == message.identifier:
-                        exit_time = obj.timestamp
-                        break
-                
-                # if we don't find the matching enter, contexts are unmatched
-                else:
-                    raise Exception()
-
-                # build the new yarn object
-                yarn = Yarn(
-                    identifier=message.identifier,
-                    values=values,
-                    contexts=contexts,
-                    enter_time=message.timestamp,
-                    exit_time=exit_time
-                )
-
-                # and add it back to the stack
-                stack.append(yarn)
-
-        # if all went well, the only object remaining on the stack is a yarn object we can return
-        return stack[0]
+    # if all went well, the only object remaining on the stack is a yarn object we can return
+    return stack[0]

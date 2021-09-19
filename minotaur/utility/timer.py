@@ -3,7 +3,7 @@ from time import perf_counter as current_time
 class Timer:
     """Timing context manager that uses the highest-precision clock available (via `time.perf_counter`)."""
 
-    def __slots__ = ("_start", "_stop")
+    __slots__ = ("_start", "_stop")
 
     def __init__(self):
         """Construct (and start) a timer."""

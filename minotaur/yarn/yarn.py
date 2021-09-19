@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Any, Dict
 
-from ..hash import hash
-from ..timer import current_time
+from ..utility.timer import current_time
 
 @dataclass
 class Value:
@@ -36,14 +35,14 @@ class Identifier:
     def __init__(self, symbol : str, key : Optional[str] = None):
         """Construct an identifier from a symbol and an optional key.
 
-        If no key is provided, one will be created with `hash.hash`.
+        If no key is provided, one will be created with `hash(current_time())`.
         """
 
         self.symbol = symbol
         if key is not None:
             self.key = key
         else:
-            self.key = hash()
+            self.key = hash(current_time())
 
     # IO
 
@@ -69,13 +68,13 @@ class Yarn:
     identifier : Identifier
     values : Dict[str, Any]
     contexts : List["Yarn"]
-    enter_time : int
-    exit_time : int
+    enter_time : float
+    exit_time : float
 
     # Accessing Attributes
 
     @property
-    def duration(self) -> int:
+    def duration(self) -> float:
         """Total time the context was open."""
 
         return self.exit_time - self.enter_time

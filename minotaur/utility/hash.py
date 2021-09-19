@@ -8,7 +8,7 @@ _FACTORY = Hashids()
 def hash(seed : Optional[Union[int, str]] = None) -> str:
     """Construct a hash.
 
-    If provided, uses the optional seed. Otherwise, uses the current time.
+    If provided, uses the optional seed. Otherwise, uses a random integer.
     """
     
     if seed:
