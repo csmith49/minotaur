@@ -23,6 +23,7 @@ class MinotaurContextManager:
     # Utilities for checking kwargs and results
 
     def emit_kwargs(self, **kwargs):
+        """Emit `value` with name `key` if `key=value` is given in `**kwargs` and `key` is defined in `self.kwargs`."""
         for kwarg in self.kwargs:
             try:
                 value = kwargs[kwarg]
@@ -31,6 +32,7 @@ class MinotaurContextManager:
                 pass
 
     def emit_result(self, value : Any):
+        """Emit the value with name `self.result`, if defined."""
         if self.result is not None:
             self.parent.emit(self.result, value)
 
@@ -58,13 +60,14 @@ class MinotaurContextManager:
 
     def __call__(self, callable):
         """Alias for `self.decorate(callable)`."""
+        
         return self.decorate(callable)
 
 class Minotaur:
-    """Manages contexts and values."""
+    """Interface for managing contexts and logging Message objects."""
     
     def __init__(self, filepath : Optional[str] = None, verbose : bool = False, root : str = "root"):
-        """Construct a Minotaur instrumenter object."""
+        """Construct a Minotaur object."""
 
         self.logger = getLogger(f"minotaur.{self}")
         self.logger.setLevel(INFO)
@@ -72,27 +75,39 @@ class Minotaur:
         self.filepath = filepath
         self.verbose = verbose
         self.root = root
-        
-        # construct the handlers
-        self.handlers = []
-
-        if self.filepath is not None:
-            self.handlers.append(FileHandler(self.filepath))
-
-        if self.verbose:
-            self.handlers.append(StreamHandler(stream=stdout))
 
         # and the formatter
         self.formatter = Formatter(fmt="%(message)s")
 
-        # initialize the handlers
-        for handler in self.handlers:
-            handler.setLevel(INFO)
-            handler.setFormatter(self.formatter)
-            self.logger.addHandler(handler)
+        # and set up handlers, if needed
+        if filepath is not None:
+            self.add_filepath_handler(filepath)
+
+        if verbose:
+            self.add_stdout_handler()
 
         # maintain a context stack for appropriately annotating emitted messages
         self.context_stack = [Identifier(self.root)]
+
+    # Handler additions
+    
+    def add_filepath_handler(self, filepath : str):
+        """Adds a filepath handler to the object-level logger."""
+
+        handler = FileHandler(filepath)
+        handler.setLevel(INFO)
+        handler.setFormatter(self.formatter)
+
+        self.logger.addHandler(handler)
+
+    def add_stdout_handler(self):
+        """Adds a stream handler to the object-level logger."""
+
+        handler = StreamHandler(stream=stdout)
+        handler.setLevel(INFO)
+        handler.setFormatter(self.formatter)
+
+        self.logger.addHandler(handler)
 
     # Special Access Functions
 
