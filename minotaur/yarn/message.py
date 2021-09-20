@@ -7,7 +7,7 @@ from .yarn import Value, Identifier, Yarn
 
 # Messages
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Message(ABC):
     timestamp : float
     context : Identifier
@@ -31,7 +31,7 @@ class Message(ABC):
     def __str__(self):
         return dumps(self.dump())
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Enter(Message):
     identifier : Identifier
 
@@ -56,7 +56,7 @@ class Enter(Message):
 
         return cls(identifier=identifier, context=context, timestamp=timestamp)
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Exit(Message):
     identifier : Identifier
 
@@ -81,7 +81,7 @@ class Exit(Message):
 
         return cls(identifier=identifier, context=context, timestamp=timestamp)
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Emit(Message):
     name : str
     value : Any
@@ -167,7 +167,7 @@ def load(messages : List[Message]) -> Yarn:
             
             # if we don't find the matching enter, contexts are unmatched
             else:
-                raise Exception()
+                raise Exception(f"No matching enter for identifier {message.identifier}...")
 
             # build the new yarn object
             yarn = Yarn(

@@ -11,7 +11,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         "click",
-        "hashids"
+        "hashids",
+        "networkx",
+        "rich"
     ],
     zip_safe=False,
     entry_points={

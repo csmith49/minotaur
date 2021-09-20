@@ -3,7 +3,7 @@ from typing import List, Optional, Any, Dict
 
 from ..utility.seed import Seed
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Value:
     name : str
     value : Any
@@ -27,7 +27,7 @@ class Value:
             "value" : self.value
         }
 
-@dataclass
+@dataclass(eq=True, unsafe_hash=True)
 class Identifier:
     symbol : str
     key : str
