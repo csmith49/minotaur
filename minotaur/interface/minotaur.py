@@ -1,5 +1,6 @@
-from ..yarn.message import Enter, Exit, Emit
-from ..yarn.yarn import Identifier
+from ..message import Enter, Exit, Emit
+from ..maze import Identifier
+
 from ..utility.timer import current_time
 
 from logging import Formatter, FileHandler, StreamHandler, getLogger, INFO
@@ -165,9 +166,11 @@ class Minotaur:
     def emit(self, name : str, value : Any):
         """Emit a value in the current context."""
 
+        identifier = Identifier(name)
+
         message = Emit(
-            name=name,
             value=value,
+            identifier=identifier,
             context=self.current_context,
             timestamp=current_time()
         )
